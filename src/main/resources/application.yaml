@@ -1,0 +1,67 @@
+spring:
+  application:
+    name: ecommerce
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/ecommerce
+    username: postgres
+    password: postgres
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+    show: true
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      spring.json.use.type.headers: false
+    consumer:
+      group-id: ecommerce-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.org.ecommerce.common.event
+        spring.json.value.default.type: com.org.ecommerce.common.event.StockReservationEvent
+        spring.json.use.type.headers: false
+
+# 1 hour
+jwt:
+  secret: ThisIsMyVerySecretKeyForJwtAuthentication123456
+  expiration: 3600000
+
+inventory:
+  service:
+    url: http://localhost:8081
+
+payment:
+  simulation:
+    result: SUCCESS
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      inventoryService:
+        sliding-window-size: 5 # CHECK THE LAST 5 CALLS
+        minimum-number-of-calls: 5 # MINIMUM 5 CALLS
+        failure-rate-threshold: 50 # IF FAILURE RATE OF THE LAST 5 CALLS ARE 50% OR MORE, OPEN THE CB
+        wait-duration-in-open-state: 10s # KEEP THE CB IN OPEN STATE FOR 10 SECONDS
+        permitted-number-of-calls-in-half-open-state: 3 # THEN MOVE CB TO HALF OPEN, AND ALLOW 3 TEST CALLS
+
+#management:
+#  endpoints:
+#    web:
+#      exposure:
+#        include: health,metrics
